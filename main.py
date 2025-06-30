@@ -1,12 +1,13 @@
 import tkinter as tk
 import sqlite3
 from tkinter import messagebox
+import logica
 
 # Inicialización de base de datos
 con = sqlite3.connect("passman.db")
 cursor = con.cursor()
 cursor.execute("""  CREATE TABLE IF NOT EXISTS manager (
-               ID INTEGER PRIMARY KEY AUTOINCREMENT,
+               ID INTEGER PRIMARY KEY,
                NOMBREAPP TEXT,
                IDEMAIL TEXT,
                PASSWORD TEXT
@@ -20,7 +21,7 @@ def formulario():
     con = sqlite3.connect("passman.db")
     cursor = con.cursor()
     if nombreApp.get()!="" and idEmail.get()!="" and password.get()!="":
-        cursor.execute("INSERT INTO manager VALUES (:NOMBREAPP, :IDEMAIL, :PASSWORD)",
+        cursor.execute("INSERT INTO manager (NOMBREAPP, IDEMAIL, PASSWORD) VALUES (:NOMBREAPP, :IDEMAIL, :PASSWORD)",
             {
                 'NOMBREAPP': nombreApp.get(),
                 'IDEMAIL': idEmail.get(),
@@ -33,9 +34,9 @@ def formulario():
         messagebox.showinfo("Éxito", "Su contraseña fue agregada a la base de datos exitosamente!")
 
         # Limpiar el texto en las entry boxes
-        nombreApp.delete(0, END)
-        idEmail.delete(0, END)
-        password.delete(0, END)
+        nombreApp.delete(0, tk.END)
+        idEmail.delete(0, tk.END)
+        password.delete(0, tk.END)
 
     else:
         messagebox.showinfo("Error", "Por favor, rellene todos los campos.")
@@ -53,7 +54,7 @@ def query():
 
     mostrarRegistros = ""
     for registro in registros:
-        mostrarRegistros += str(registro[4])+ " " + str(registro[0])+ " "+ str(registro[1]) + " " + str(registro[2]) + " " + str(registro[3])
+        mostrarRegistros += str(registro[4])+ " "+ str(registro[1]) + " " + str(registro[2]) + " " + str(registro[3]) + "\n"
 
     label_consulta['text'] = mostrarRegistros
 
@@ -68,8 +69,8 @@ def eliminar():
     t = borrarRegistros.get()
     if(t!=""):
         cursor.execute("DELETE FROM manager where oid = " + t)
-        borrarRegistros.delete(0, END)
-        messagebox.showinfo("Éxito", "Registro %s fue eliminado.")
+        borrarRegistros.delete(0, tk.END)
+        messagebox.showinfo("Éxito", f"Registro {t} fue eliminado.")
     else:
         messagebox.showinfo("Error", "Debes ingresar una ID de registro para eliminar!")
     con.commit()
@@ -77,7 +78,12 @@ def eliminar():
 
 def ocultarRegistros():
     label_consulta['text'] = ""
-    btn_consulta.configure(text="Mostrar Registros", command=consulta)
+    btn_consulta.configure(text="Mostrar Registros", command=query)
+
+def generacionPass():
+    passGenerada = logica.generar_contrasena(12)
+    password.delete(0, tk.END)
+    password.insert(0,passGenerada)
 
 # Ventana
 ventana = tk.Tk()
@@ -103,12 +109,24 @@ label_password.grid(row=3,column=0)
 password = tk.Entry(ventana, width=30)
 password.grid(row=3, column=1, padx=20)
 
-borrarRegistro = tk.Entry(ventana, width=20)
-borrarRegistro.grid(row=6, column=1, padx=20)
+borrarRegistros = tk.Entry(ventana, width=20)
+borrarRegistros.grid(row=6, column=1, padx=20)
 
 btn_formulario = tk.Button(ventana, text = "Agregar Registro", command=formulario)
 btn_formulario.grid(row = 5, column=0, pady=5, padx=15, ipadx=35)
 
+btn_generarPass = tk.Button(ventana, text= "Generar Contraseña", command=generacionPass)
+btn_generarPass.grid(row = 5, column= 1, pady=5, padx=15, ipadx=35)
 
+btn_borrarRegistro = tk.Button(ventana, text = "Eliminar Registro", command = eliminar)
+btn_borrarRegistro.grid(row=6, column=0, ipadx=30)
+
+btn_consulta = tk.Button(ventana, text="Mostrar Registros", command = query)
+btn_consulta.grid(row = 7, column=0, pady=5, padx=15, ipadx=35)
+
+
+global label_consulta
+label_consulta = tk.Label(frame, anchor="nw", justify="left")
+label_consulta.place(relwidth=1, relheight=1)
 
 ventana.mainloop()
